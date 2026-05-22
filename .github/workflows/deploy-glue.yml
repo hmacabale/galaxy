@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATA_BUCKET: bpigalaxy-data
-      GLUE_BUCKET: bpigalaxy-glue-assets
+      DATA_BUCKET: ztest-bpigalaxy-data
+      GLUE_BUCKET: ztest-bpigalaxy-glue-assets
       GLUE_JOB_NAME: sample-glue-job
       AWS_REGION: ap-southeast-1
 
