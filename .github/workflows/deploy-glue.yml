@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATA_BUCKET: bpigalaxy-data
-      GLUE_BUCKET: bpigalaxy-glue-assets
+      DATA_BUCKET: zbpigalaxy-data
+      GLUE_BUCKET: zbpigalaxy-glue-assets
       GLUE_JOB_NAME: sample-glue-job
 
     steps:
