@@ -77,7 +77,7 @@ jobs:
             aws glue update-job \
               --job-name $GLUE_JOB_NAME \
               --job-update '{
-                "Role": "AWSGlueServiceRole",
+                "Role": "bpidevda-glueexecution-role",
                 "Command": {
                   "Name": "glueetl",
                   "ScriptLocation": "s3://'$GLUE_BUCKET'/scripts/sample_glue_job.py",
