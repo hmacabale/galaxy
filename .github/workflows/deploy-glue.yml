@@ -1,0 +1,80 @@
+name: Deploy Glue Job
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      BUCKET: bpidev-glue-assets
+      GLUE_JOB_NAME: sample-glue-job
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::762233726348:role/bpidev-ocid-github-role
+          aws-region: ap-southeast-1
+
+      # ✅ Upload Glue script
+      - name: Upload Glue script
+        run: |
+          aws s3 cp glue/scripts/ \
+          s3://$BUCKET/glue/scripts/ \
+          --recursive
+
+      # ✅ Upload sample CSV
+      - name: Upload CSV
+        run: |
+          aws s3 cp glue/data/ \
+          s3://$BUCKET/glue/input/ \
+          --recursive
+
+      # ✅ Create or update Glue job
+      - name: Create or Update Glue Job
+        run: |
+          JOB_EXISTS=$(aws glue get-job --job-name $GLUE_JOB_NAME --query 'Job.Name' --output text 2>/dev/null || echo "NOT_FOUND")
+
+          if [ "$JOB_EXISTS" == "$GLUE_JOB_NAME" ]; then
+            echo "Updating Glue job..."
+            aws glue update-job \
+              --job-name $GLUE_JOB_NAME \
+              --job-update '{
+                "Role": "AWSGlueServiceRole",
+                "Command": {
+                  "Name": "glueetl",
+                  "ScriptLocation": "s3://'$BUCKET'/glue/scripts/sample_glue_job.py",
+                  "PythonVersion": "3"
+                },
+                "DefaultArguments": {
+                  "--INPUT_PATH": "s3://'$BUCKET'/glue/input/",
+                  "--OUTPUT_PATH": "s3://'$BUCKET'/glue/output/"
+                },
+                "GlueVersion": "4.0",
+                "WorkerType": "G.1X",
+                "NumberOfWorkers": 2
+              }'
+          else
+            echo "Creating Glue job..."
+            aws glue create-job \
+              --name $GLUE_JOB_NAME \
+              --role AWSGlueServiceRole \
+              --command Name=glueetl,ScriptLocation=s3://$BUCKET/glue/scripts/sample_glue_job.py,PythonVersion=3 \
+              --default-arguments '{
+                "--INPUT_PATH": "s3://'$BUCKET'/glue/input/",
+                "--OUTPUT_PATH": "s3://'$BUCKET'/glue/output/"
+              }' \
+              --glue-version "4.0" \
+              --worker-type G.1X \
+              --number-of-workers 2
+          fi
